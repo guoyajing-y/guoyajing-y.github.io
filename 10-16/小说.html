@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            text-decoration: none;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="box" v-cloak>
+        <div style="height: 50px;background: #ccc;text-align: center;line-height: 50px;">
+            {{$route.params.book}}
+        </div>
+        <router-view></router-view>
+    </div>
+    <template id="no1">
+        <div>
+            <div>
+                <div v-for="(i,index) in sort_arr">
+                    <h2 v-if="index=='girl'" style="line-height: 50px;">女生</h2>
+                    <h2 v-if="index=='boy'" style="line-height: 50px;">男生</h2>
+                    <div v-for="j in i">
+                        <div v-for="(k,$key,index) in j">
+                            <!-- {{$key}} -->
+                            <h3 style="line-height:30px;">
+                                <a :href="'#/no2/'+$key+'/'+k.cid+'/'+k.relatedName"
+                                    style="color: black;">{{k.relatedName}}</a>
+                            </h3>
+                            <div v-for="(h,index) in k.list">
+
+                                <div style="float: left;">
+                                    <a :href="'#/no2/'+$key+'/'+k.cid+'/'+k.relatedName"
+                                        style="color: rgb(151, 143, 143);">{{h}}</a>
+                                    {{index==k.list.length-1?'':'|'}}
+                                </div>
+                            </div><br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <template id="no2">
+        <div>
+            <div v-for="i in book_list" style="width: 100%;height: 200px;">
+               <div style="width: 30%;float: left;">
+                    <img :src="i.cover" alt="" style="width: 85px;height: 115px;margin: 20px 0 0 30px;">
+               </div>
+               <div style="width: 70%;float: left;overflow: hidden;">
+                   <h3 style="color: #333;line-height: 30px;font-size: 22px;">{{i.title}}</h3>
+                   <p style="color: #999;">{{i.author}}</p>
+                   <p style="color: #999;">{{i.desc}}</p>
+               </div>
+            </div>
+        </div>
+    </template>
+</body>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<script src="vue-resource.js"></script>
+<script>
+    var routes = [
+        {
+            path: '/',
+            redirect: '/no1/小说'
+        },
+        {
+            path: '/no1/:book',
+            component: {
+                template: '#no1',
+                data() {
+                    return {
+                        sort_arr: ''
+                    }
+                },
+                created() {
+                    this.$http.post('http://walden1.shuqireader.com/webapi/rank/classrelation?_=1571626185772', {
+                        type: 1,
+                        timestamp: 1571626185772,
+                        sign: '543106d838a427da88cd1224c5832a82',
+                        shuqi_h5: ''
+                    }, {
+                        emulateJSON: true
+                    }).then((data) => {
+                        // console.log(data.data.data);
+                        this.sort_arr = data.data.data;
+                    })
+                }
+            }
+        },
+        {
+            path: '/no2/:book/:cid/:name',
+            component: {
+                template: '#no2',
+                data() {
+                    return {
+                        book_id: '',
+                        book_name:'',
+                        book_list:''
+                    }
+                },
+                created() {
+                    console.log(this.$route.params)
+                    this.book_id = this.$route.params.cid;
+                    this.book_name=this.$route.params.name;
+                    console.log(this.book_id);
+                    this.$http.post('http://walden1.shuqireader.com/webapi/rank/classrelation?_=1571629473117', {
+                        type: 2,
+                        cid: this.book_id,
+                        timestamp: 1571629473117,
+                        sign: 'dbbfb0b7b3edbb649301cf82c17867dd',
+                        shuqi_h5: ''
+                    }, {
+                        emulateJSON: true
+                    }).then((data) => {
+                        console.log(data.data.data);
+                    })
+                    this.$http.get('http://read.xiaoshuo1-sm.com/novel/i.php?do=is_caterank&p=1&page=1&words=&shuqi_h5=&onlyCpBooks=1&secondCate=%E7%8E%B0%E4%BB%A3%E8%A8%80%E6%83%85&sort=monthHot&_=1571661503726', {
+                        params: {
+                            do: 'is_caterank',
+                            p: 1,
+                            page: 1,
+                            words:'',
+                            shuqi_h5:'',
+                            onlyCpBooks: 1,
+                            secondCate: this.book_name,
+                            sort: 'monthHot',
+                            _: 1571661503726,
+                        }
+                    }).then((data)=>{
+                        // console.log(data.data.data);
+                        this.book_list=data.data.data;
+                        console.log(this.book_list);
+                    })
+                }
+            }
+        }
+    ]
+    var router = new VueRouter({
+        routes,
+    })
+    new Vue({
+        el: '#box',
+        router,
+    })
+</script>
+
+</html>
